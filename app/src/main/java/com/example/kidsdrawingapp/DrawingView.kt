@@ -22,9 +22,17 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
     private var canvas: Canvas? = null
     // to keep the drawing on the screen
     private val mPaths = ArrayList<CustomPath>()
+    private val mUndoPaths = ArrayList<CustomPath>()
 
     init {
         setUpDrawing()
+    }
+     fun onClickUndo() {
+        if (mPaths.size > 0) {
+            mUndoPaths.add(mPaths.removeAt(mPaths.size - 1))
+            // to refresh the screen
+            invalidate()
+        }
     }
 
     private fun setUpDrawing() {

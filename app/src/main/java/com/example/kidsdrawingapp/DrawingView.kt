@@ -16,6 +16,7 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
     private var mDrawPath: CustomPath? = null
     private var mCanvasBitmap: Bitmap? = null
     private var mDrawPaint: Paint? = null
+    // The Paint class holds the style and color information about how to draw geometries, text and bitmaps.
     private var mCanvasPaint: Paint? = null
     private var mBrushSize: Float = 0.toFloat()
     private var color = Color.BLACK
@@ -26,13 +27,6 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
 
     init {
         setUpDrawing()
-    }
-     fun onClickUndo() {
-        if (mPaths.size > 0) {
-            mUndoPaths.add(mPaths.removeAt(mPaths.size - 1))
-            // to refresh the screen
-            invalidate()
-        }
     }
 
     private fun setUpDrawing() {
@@ -68,14 +62,12 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
             mDrawPaint!!.color = mDrawPath!!.color
             canvas.drawPath(mDrawPath!!, mDrawPaint!!)
         }
-
     }
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val touchX = event.x
+        val touchY = event.y
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        val touchX = event?.x
-        val touchY = event?.y
-
-        when (event?.action) {
+        when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 mDrawPath!!.color = color
                 mDrawPath!!.brushThickness = mBrushSize
@@ -88,20 +80,19 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
                 }
             }
             MotionEvent.ACTION_MOVE -> {
-                if (touchX != null) {
-                    if (touchY != null) {
-                        mDrawPath!!.lineTo(touchX, touchY)
-                    }
-                }
+                mDrawPath!!.lineTo(
+                    touchX,
+                    touchY
+                ) // Add a line from the last point to the specified point (x,y).
             }
             MotionEvent.ACTION_UP -> {
-                mDrawPath = CustomPath(color, mBrushSize)
+                //order is important here because we want to add the path to the arraylist before we reset it
                 mPaths.add(mDrawPath!!)
+                mDrawPath = CustomPath(color, mBrushSize)
             }
             else -> return false
         }
         invalidate()
-
         return true
     }
     fun setSizeForBrush(newSize: Float){
@@ -114,10 +105,13 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
         color = Color.parseColor(newColor)
         mDrawPaint!!.color = color
     }
-
-
-
-
+    fun onClickUndo() {
+        if (mPaths.size > 0) {
+            mUndoPaths.add(mPaths.removeAt(mPaths.size - 1))
+            // to refresh the screen
+            invalidate()
+        }
+    }
     internal inner class CustomPath(var color: Int, var brushThickness: Float) : Path() {
 
     }

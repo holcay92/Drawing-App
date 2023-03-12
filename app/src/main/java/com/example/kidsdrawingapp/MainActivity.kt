@@ -83,11 +83,9 @@ class MainActivity : AppCompatActivity() {
         val ibBrush = findViewById<ImageButton>(R.id.ib_brush)
         ibBrush.setOnClickListener {
             showBrushSizeChooserDialog()
-
             // Coroutine example with lifecycleScope
             showProgressDialog()
             lifecycleScope.launch { executeCoroutine("Pick a brush size with coroutine!") }
-
         }
         val ibUndo = findViewById<ImageButton>(R.id.ib_undo)
         ibUndo.setOnClickListener {
@@ -230,6 +228,7 @@ class MainActivity : AppCompatActivity() {
           } timer.start()*/
 
     }
+
     private fun isReadStorageAllowed(): Boolean {
         // getting the permission status
         val result =
@@ -238,6 +237,7 @@ class MainActivity : AppCompatActivity() {
         // if permission is granted returning true
         return result == PackageManager.PERMISSION_GRANTED
     }
+
     private fun requestStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && shouldShowRequestPermissionRationale(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -257,6 +257,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
     }
+
     private fun getBitmapFromView(view: View): Bitmap {
         val returnedBitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(returnedBitmap)

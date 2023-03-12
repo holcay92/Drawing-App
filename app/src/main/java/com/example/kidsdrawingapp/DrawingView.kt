@@ -22,7 +22,7 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
     private var color = Color.BLACK
     private var canvas: Canvas? = null
     // to keep the drawing on the screen
-    private val mPaths = ArrayList<CustomPath>()
+    val mPaths = ArrayList<CustomPath>()
     private val mUndoPaths = ArrayList<CustomPath>()
 
     init {
@@ -112,7 +112,7 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
             invalidate()
         }
     }
-    internal inner class CustomPath(var color: Int, var brushThickness: Float) : Path() {
+    inner class CustomPath(var color: Int, var brushThickness: Float) : Path() {
 
     }
 }

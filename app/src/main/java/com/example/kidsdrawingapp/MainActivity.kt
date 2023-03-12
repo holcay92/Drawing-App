@@ -6,14 +6,15 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.Dialog
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.os.Build
 import android.os.CountDownTimer
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -23,6 +24,9 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
     private var customProgressDialog: Dialog? = null
@@ -36,6 +40,7 @@ class MainActivity : AppCompatActivity() {
             if (result.resultCode == RESULT_OK && result.data != null) {
                 val imageBackground: ImageView = findViewById(R.id.iv_background)
                 imageBackground.setImageURI(result.data?.data)
+                drawingView!!.mPaths.clear()
             }
         }
     private val storagePermission: ActivityResultLauncher<Array<String>> =
@@ -92,6 +97,17 @@ class MainActivity : AppCompatActivity() {
         ibGallery.setOnClickListener {
             requestStoragePermission()
         }
+        val ibSave = findViewById<ImageButton>(R.id.ib_save)
+        ibSave.setOnClickListener {
+            if (isReadStorageAllowed()) {
+                lifecycleScope.launch {
+                    //reference the frame layout
+                    val flDrawingView: FrameLayout = findViewById(R.id.fl_drawing_view_container)
+                    //Save the image to the device
+                    saveBitmapFile(getBitmapFromView(flDrawingView))
+                }
+            }
+        }
     }
 
     private fun showBrushSizeChooserDialog() {
@@ -128,7 +144,6 @@ class MainActivity : AppCompatActivity() {
             // Snackbar.make(findViewById(R.id.drawing_view), "Brush size: 30", Snackbar.LENGTH_SHORT).show()
             Toast.makeText(this, "Brush size: 30", Toast.LENGTH_SHORT).show()
         }
-
         brushDialog.show()
     }
 
@@ -204,29 +219,25 @@ class MainActivity : AppCompatActivity() {
         customProgressDialog.setContentView(R.layout.custom_progress_dialog)
         customProgressDialog.show()
 
-        val timer = object : CountDownTimer(1000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                // do nothing
-            }
+        /* val timer = object : CountDownTimer(3000, 1000) {
+              override fun onTick(millisUntilFinished: Long) {
+                  // do nothing
+              }
 
-            override fun onFinish() {
-                customProgressDialog.dismiss()
-            }
-        }
-        timer.start()
+              override fun onFinish() {
+                  customProgressDialog.dismiss()
+              }
+          } timer.start()*/
+
     }
+    private fun isReadStorageAllowed(): Boolean {
+        // getting the permission status
+        val result =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
 
-    private fun showRationaleDialog(title: String, message: String) {
-        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-        builder.setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("OK") { dialog, _ ->
-                // Request the permission
-                dialog.dismiss()
-            }
-        builder.create().show()
+        // if permission is granted returning true
+        return result == PackageManager.PERMISSION_GRANTED
     }
-
     private fun requestStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && shouldShowRequestPermissionRationale(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -238,14 +249,72 @@ class MainActivity : AppCompatActivity() {
             )
         } else {
             // this is how you request a permission
-            storagePermission.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
-            // TODO - add writing external storage permission
+            storagePermission.launch(
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                )
+            )
         }
+    }
+    private fun getBitmapFromView(view: View): Bitmap {
+        val returnedBitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(returnedBitmap)
+        val bgDrawable = view.background
+        if (bgDrawable != null) {
+            // has background drawable, then draw it on the canvas
+            bgDrawable.draw(canvas)
+        } else {
+            // does not have background drawable, then draw white background on the canvas
+            canvas.drawColor(Color.WHITE)
+        }
+        view.draw(canvas)
+        return returnedBitmap
+    }
+
+    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String {
+        var result = ""
+        withContext(Dispatchers.IO) {
+            if (mBitmap != null) {
+                try {
+                    val bytes = ByteArrayOutputStream()
+                    mBitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
+                    val f = File(
+                        externalCacheDir?.absoluteFile.toString() +
+                                File.separator + "DrawingApp_" + System.currentTimeMillis() / 1000 + ".png"
+                    )
+                    val fo = FileOutputStream(f)
+                    fo.write(bytes.toByteArray())
+                    fo.close()
+                    result = f.absolutePath
+
+                    runOnUiThread {
+                        if (result.isNotEmpty()) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "File saved successfully: $result",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "File can not be saved",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                } catch (e: java.lang.Exception) {
+                    result = ""
+                    e.printStackTrace()
+                }
+            }
+        }
+        return result
     }
 
     private suspend fun executeCoroutine(message: String) {
         withContext(Dispatchers.IO) {
-            for (i in 0..200000) {
+            for (i in 0..100000) {
                 Log.d("delay", "Loop -> $i")
             }
 
@@ -261,4 +330,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showRationaleDialog(title: String, message: String) {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        builder.setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK") { dialog, _ ->
+                // Request the permission
+                dialog.dismiss()
+            }
+        builder.create().show()
+    }
 }

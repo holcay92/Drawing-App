@@ -98,6 +98,7 @@ class MainActivity : AppCompatActivity() {
         val ibSave = findViewById<ImageButton>(R.id.ib_save)
         ibSave.setOnClickListener {
             if (isReadStorageAllowed()) {
+                showProgressDialog()
                 lifecycleScope.launch {
                     //reference the frame layout
                     val flDrawingView: FrameLayout = findViewById(R.id.fl_drawing_view_container)
@@ -117,28 +118,28 @@ class MainActivity : AppCompatActivity() {
         xSmallButton.setOnClickListener {
             drawingView?.setSizeForBrush(5.toFloat())
             brushDialog.dismiss()
-            customProgressDialogFunction()
+           // customProgressDialogFunction()
             Toast.makeText(this, "Brush size: 5", Toast.LENGTH_SHORT).show()
         }
         val smallBtn = brushDialog.findViewById(R.id.ll_small_brush) as LinearLayout
         smallBtn.setOnClickListener {
             drawingView?.setSizeForBrush(10.toFloat())
             brushDialog.dismiss()
-            customProgressDialogFunction()
+           // customProgressDialogFunction()
             Toast.makeText(this, "Brush size: 10", Toast.LENGTH_SHORT).show()
         }
         val mediumBtn = brushDialog.findViewById(R.id.ll_medium_brush) as LinearLayout
         mediumBtn.setOnClickListener {
             drawingView?.setSizeForBrush(20.toFloat())
             brushDialog.dismiss()
-            customProgressDialogFunction()
+            //customProgressDialogFunction()
             Toast.makeText(this, "Brush size: 20", Toast.LENGTH_SHORT).show()
         }
         val largeBtn = brushDialog.findViewById(R.id.ll_large_brush) as LinearLayout
         largeBtn.setOnClickListener {
             drawingView?.setSizeForBrush(30.toFloat())
             brushDialog.dismiss()
-            customProgressDialogFunction()
+            //customProgressDialogFunction()
             // Snackbar.make(findViewById(R.id.drawing_view), "Brush size: 30", Snackbar.LENGTH_SHORT).show()
             Toast.makeText(this, "Brush size: 30", Toast.LENGTH_SHORT).show()
         }
@@ -195,21 +196,11 @@ class MainActivity : AppCompatActivity() {
             customProgressDialog!!.dismiss()
             customProgressDialog = null
         }
-
     }
-
     private fun showProgressDialog() {
         customProgressDialog = Dialog(this)
         customProgressDialog?.setContentView(R.layout.custom_progress_dialog)
         customProgressDialog?.show()
-        // customProgressDialog.tv_submit.setOnClickListener {
-        //   Toast.makeText(this, "Clicked Submit", Toast.LENGTH_SHORT).show()
-        //   customDialog.dismiss()
-
-        /* customProgressDialog.tv_cancel.setOnClickListener {
-           Toast.makeText(this, "Clicked Cancel", Toast.LENGTH_SHORT).show()
-           customDialog.dismiss()
-       }*/
     }
 
     private fun customProgressDialogFunction() {
@@ -290,6 +281,7 @@ class MainActivity : AppCompatActivity() {
                     result = f.absolutePath
 
                     runOnUiThread {
+                        cancelProgressDialog()
                         if (result.isNotEmpty()) {
                             Toast.makeText(
                                 this@MainActivity,

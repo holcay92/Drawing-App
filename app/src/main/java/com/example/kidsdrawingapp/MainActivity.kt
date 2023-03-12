@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.CountDownTimer
 import android.provider.MediaStore
@@ -288,6 +289,7 @@ class MainActivity : AppCompatActivity() {
                                 "File saved successfully: $result",
                                 Toast.LENGTH_SHORT
                             ).show()
+                            shareImage(result)
                         } else {
                             Toast.makeText(
                                 this@MainActivity,
@@ -332,5 +334,26 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
         builder.create().show()
+    }
+
+    private fun shareImage(result:String) {
+        MediaScannerConnection.scanFile(this, arrayOf(result), null) {
+                path, uri ->
+                val shareIntent = Intent()
+            //intent type action send
+                shareIntent.action = Intent.ACTION_SEND
+
+                shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+            // this is the type of data that we are sending
+                shareIntent.type = "image/png"
+            // this opens the share dialog
+                startActivity(
+                    Intent.createChooser(
+                        shareIntent,
+                        "Share"
+                    )
+                )
+        }
+
     }
 }

@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.CountDownTimer
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -18,13 +19,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
-
+    private var customProgressDialog: Dialog? = null
     private var drawingView: DrawingView? = null
     private var mImageButtonCurrentPaint: ImageButton? = null
 
-    private val openGalleryLauncher : ActivityResultLauncher<Intent> =
+    private val openGalleryLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -44,7 +49,8 @@ class MainActivity : AppCompatActivity() {
                     if (permission == Manifest.permission.READ_EXTERNAL_STORAGE) {
                         Toast.makeText(this, "Storage permission granted", Toast.LENGTH_SHORT)
                             .show()
-                        val pickIntent= Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                        val pickIntent =
+                            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                         openGalleryLauncher.launch(pickIntent)
 
                     }
@@ -55,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -71,6 +78,11 @@ class MainActivity : AppCompatActivity() {
         val ibBrush = findViewById<ImageButton>(R.id.ib_brush)
         ibBrush.setOnClickListener {
             showBrushSizeChooserDialog()
+
+            // Coroutine example with lifecycleScope
+            showProgressDialog()
+            lifecycleScope.launch { executeCoroutine("Pick a brush size with coroutine!") }
+
         }
         val ibUndo = findViewById<ImageButton>(R.id.ib_undo)
         ibUndo.setOnClickListener {
@@ -78,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         }
         val ibGallery = findViewById<ImageButton>(R.id.ib_gallery)
         ibGallery.setOnClickListener {
-           requestStoragePermission()
+            requestStoragePermission()
         }
     }
 
@@ -165,15 +177,23 @@ class MainActivity : AppCompatActivity() {
         alertDialog.show()
     }
 
-    private fun customDialogFunction() {
-        val customDialog = Dialog(this)
-        // customDialog.setContentView(R.layout.custom_dialog)
-        // customDialog.setContentView(R.layout.custom_dialog)
-        /* customDialog.tv_submit.setOnClickListener {
-             Toast.makeText(this, "Clicked Submit", Toast.LENGTH_SHORT).show()
-             customDialog.dismiss()
-         }*/
-        /* customDialog.tv_cancel.setOnClickListener {
+    private fun cancelProgressDialog() {
+        if (customProgressDialog != null) {
+            customProgressDialog!!.dismiss()
+            customProgressDialog = null
+        }
+
+    }
+
+    private fun showProgressDialog() {
+        customProgressDialog = Dialog(this)
+        customProgressDialog?.setContentView(R.layout.custom_progress_dialog)
+        customProgressDialog?.show()
+        // customProgressDialog.tv_submit.setOnClickListener {
+        //   Toast.makeText(this, "Clicked Submit", Toast.LENGTH_SHORT).show()
+        //   customDialog.dismiss()
+
+        /* customProgressDialog.tv_cancel.setOnClickListener {
            Toast.makeText(this, "Clicked Cancel", Toast.LENGTH_SHORT).show()
            customDialog.dismiss()
        }*/
@@ -196,10 +216,7 @@ class MainActivity : AppCompatActivity() {
         timer.start()
     }
 
-    private fun showRationaleDialog(
-        title: String,
-        message: String,
-    ) {
+    private fun showRationaleDialog(title: String, message: String) {
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
         builder.setTitle(title)
             .setMessage(message)
@@ -209,6 +226,7 @@ class MainActivity : AppCompatActivity() {
             }
         builder.create().show()
     }
+
     private fun requestStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && shouldShowRequestPermissionRationale(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -222,6 +240,24 @@ class MainActivity : AppCompatActivity() {
             // this is how you request a permission
             storagePermission.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
             // TODO - add writing external storage permission
+        }
+    }
+
+    private suspend fun executeCoroutine(message: String) {
+        withContext(Dispatchers.IO) {
+            for (i in 0..200000) {
+                Log.d("delay", "Loop -> $i")
+            }
+
+            // this will work because this function is called from the main thread
+            runOnUiThread {
+                cancelProgressDialog()
+                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+            }
+
+
+            // this wont work on this thread because we are not on the main thread
+            // Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
         }
     }
 
